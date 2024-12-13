@@ -17,15 +17,27 @@ public enum Rank {
         this.winningMoney = winningMoney;
     }
 
-    public int getCountOfMatch() { return countOfMatch; }
-    public int getWinningMoney() { return winningMoney; }
+    public int getCountOfMatch() {
+        return countOfMatch;
+    }
+
+    public int getWinningMoney() {
+        return winningMoney;
+    }
 
     public static Rank valueOf(int countOfMatch, boolean matchBonus) {
-        if (countOfMatch == 6) return FIRST;
-        if (countOfMatch == 5 && matchBonus) return SECOND;
-        if (countOfMatch == 5) return THIRD;
-        if (countOfMatch == 4) return FOURTH;
-        if (countOfMatch == 3) return FIFTH;
+        if (countOfMatch == 6) {
+            return FIRST;
+        }
+        if (countOfMatch == 5) {
+            return matchBonus ? SECOND : THIRD;
+        }
+        if (countOfMatch == 4) {
+            return FOURTH;
+        }
+        if (countOfMatch == 3) {
+            return FIFTH;
+        }
         return MISS;
     }
 }

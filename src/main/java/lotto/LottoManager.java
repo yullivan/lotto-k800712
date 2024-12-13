@@ -1,7 +1,9 @@
 package lotto;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class LottoManager {
@@ -29,7 +31,6 @@ public class LottoManager {
             lottoNumbers.add(new LottoNumber());
         }
 
-        // 생성된 모든 번호 출력
         System.out.println(manualCount + "장 수동, " + (totalGames - manualCount) + "장 자동으로 구매했습니다.");
         for (LottoNumber lottoNumber : lottoNumbers) {
             System.out.println(lottoNumber);
@@ -57,18 +58,35 @@ public class LottoManager {
         return scanner.nextInt();
     }
 
-    public void calculateStatistics(List<LottoNumber> lottoNumbers, LottoNumber winningNumbers, int bonusBall, int totalGames ) {
-        int[] stats = new int[6]; // 일치 개수에 따른 통계 배열
+    public void calculateStatistics(List<LottoNumber> lottoNumbers, LottoNumber winningNumbers, int bonusBall, int totalGames) {
+
+        Map<Integer, Integer> resultMap = new HashMap<>();
+        for (int i = 3; i <= 6; i++) {
+            resultMap.put(i, 0);
+        }
 
         for (LottoNumber userLotto : lottoNumbers) {
             int matchCount = countMatches(userLotto, winningNumbers);
-            boolean bonusMatch = userLotto.contains(bonusBall);
-
-            Rank rank = Rank.valueOf(matchCount, bonusMatch);
-            stats[rank.ordinal()]++;
+            if (matchCount >= 3) {
+                resultMap.put(matchCount, resultMap.get(matchCount) + 1);
+            }
         }
+        displayStatistics(resultMap, totalGames);
 
-        displayStatistics(stats,totalGames);
+        double buyAmount = totalGames * 1000;
+        double totalWinningAmount = calculateTotalWinningAmount(resultMap);
+
+        double profit = totalWinningAmount - buyAmount;
+
+        if (buyAmount > 0) {
+            double profitRate = (profit / buyAmount) * 100;
+            System.out.printf("총 수익률은 %.2f%%입니다.\n", profitRate);
+
+            System.out.printf("총 이익은 %.2f입니다.\n", profit);
+
+            double profitPercentage = (profit / buyAmount) * 100;
+            System.out.printf("이익률은 %.2f%%입니다.\n", profitPercentage);
+        }
     }
 
     private int countMatches(LottoNumber userLotto, LottoNumber winningLotto) {
@@ -84,34 +102,38 @@ public class LottoManager {
         return matchCount;
     }
 
-    private void displayStatistics(int[] stats, int totalGames) {
+    private void displayStatistics(Map<Integer, Integer> resultMap, int totalGames) {
         System.out.println("당첨 통계");
         System.out.println("---------");
 
         for (Rank rank : Rank.values()) {
-            System.out.printf("%d개 일치 (%d원)- %d개\n", rank.getCountOfMatch(), rank.getWinningMoney(), stats[rank.ordinal()]);
+            int count = resultMap.getOrDefault(rank.getCountOfMatch(), 0);
+            System.out.printf("%d개 일치 (%d원)- %d개\n", rank.getCountOfMatch(), rank.getWinningMoney(), count);
         }
-
-        double totalReturnRate = calculateReturnRate(stats,totalGames);
-        System.out.printf("총 수익률은 %.2f입니다.(기준이 1이기 때문에 결과적으로 손해라는 의미임)\n", totalReturnRate);
     }
 
-    private double calculateReturnRate(int[] stats, int totalGames) {
+    public double calculateProfitRate(Map<Integer, Integer> resultMap, int buyAmount) {
+        int totalWinningAmount = calculateTotalWinningAmount(resultMap);
+
+        if (buyAmount <= 0) {
+            return 0;
+        }
+
+        double profit = totalWinningAmount - buyAmount;
+
+        return (profit / buyAmount) * 100;
+    }
+
+    private int calculateTotalWinningAmount(Map<Integer, Integer> resultMap) {
         int totalWinningAmount = 0;
 
-        for (Rank rank : Rank.values()) {
-            totalWinningAmount += stats[rank.ordinal()] * rank.getWinningMoney();
+        for (Map.Entry<Integer, Integer> entry : resultMap.entrySet()) {
+            int matchCount = entry.getKey();
+            int ticketCount = entry.getValue();
+            Rank rank = Rank.valueOf(matchCount, false);
+            totalWinningAmount += rank.getWinningMoney() * ticketCount;
         }
 
-        int totalInvestment = totalGames  * 1000;
-
-        if (totalInvestment == 0) {
-            return 1;
-        }
-
-        int profit = totalWinningAmount - totalInvestment;
-        return (profit / totalInvestment) * 100;
+        return totalWinningAmount;
     }
 }
-
-
